@@ -179,6 +179,30 @@ gantt
     n8n Workflow Automation           :active,   t13, after t12, 4d
 ```
 
+## High-Level Deployment Guide
+Refer to the diagram and table below for guide on how different system components and nodes are arranged and will interact with eachother.
+
+![Automated Web-based MLOps Platform with Ray - Higher level UML deployment diagram (1)](https://github.com/user-attachments/assets/f48a8935-adbe-42d7-a0da-7d1dc70240b8)
+
+### Interconnection Table (Protocols, APIs, and Data Formats)
+
+| From Module     | To Module                              | Protocol/Tech Stack       | API / Interface           | Data Format             | Notes                                        |
+| --------------- | -------------------------------------- | ------------------------- | ------------------------- | ----------------------- | -------------------------------------------- |
+| User Interface  | Django Backend                         | HTTP/HTTPS                | REST                      | JSON                    | Login, project mgmt, dataset/model selection |
+| Django Backend  | MinIO (Storage)                        | S3 REST API               | boto3 / MinIO SDK         | Multipart/Form-Data     | Upload and download datasets                 |
+| Django Backend  | Ray Cluster Manager                    | TCP, Docker, Ray REST API | Ray Dashboard/Jobs API    | JSON                    | Spawns Ray jobs and clusters                 |
+| Django Backend  | RabbitMQ                               | AMQP                      | pika / Kombu              | JSON / Pickled Payloads | Sends training jobs to worker queue          |
+| RabbitMQ        | Training Scripts                       | Internal Queue            | Worker Execution          | Python objects / JSON   | Workers consume and train                    |
+| Training Script | Prometheus Exporters                   | HTTP (metrics scraping)   | Prometheus Client         | Prometheus text format  | Custom metrics during training               |
+| Prometheus      | Grafana Dashboards                     | HTTP / Prometheus API     | Prometheus Datasource     | Timeseries              | Dashboard for monitoring                     |
+| Training Script | MLflow Tracking Server                 | HTTP/MLflow REST API      | MLflow Client             | JSON + Artifact files   | Logs metrics, parameters, artifacts          |
+| MLflow          | Docker Packaging                       | Local File System, CLI    | mlflow models CLI         | Dockerfile, .tar.gz     | Converts model to deployable image           |
+| Packaged Model  | Ray Serve API Gateway                  | HTTP/REST, Docker         | Ray Serve HTTP Endpoints  | JSON                    | REST inference API                           |
+| Ray Serve       | Prometheus                             | HTTP Exporters            | Prometheus PushGateway    | Metrics format          | For performance metrics                      |
+| Prometheus      | Drift Detection Engine                 | HTTP API + Metrics        | Custom Scripts + Alerts   | JSON                    | Triggers on performance drops                |
+| Drift Detection | MLflow / Retrain Jobs                  | Python, CLI, API          | MLflow REST / Ray Job API | JSON                    | Launches retrain on new data                 |
+| Drift Detection | n8n Automation                         | HTTP Webhooks             | n8n REST / Trigger Nodes  | JSON                    | Triggers workflows, notifications            |
+| n8n Automation  | External Tools (e.g., Email, Telegram) | HTTPS                     | n8n integrations          | JSON                    | Sends alerts or runs retrain logic           |
 
 
 ## Detailed Phase Responsibilities
