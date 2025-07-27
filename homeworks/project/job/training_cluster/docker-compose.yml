@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  ray-head:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ray-head
+    ports:
+      - "8265:8265"
+      - "5000:5000"
+    networks:
+      - automlops_network
+
+  ray-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ray-worker
+    command: >
+      ray start --address=ray-head:6379 --block
+    networks:
+      - automlops_network
+
+networks:
+  automlops_network:
+    external: true
